@@ -1,0 +1,6 @@
+实现归并排序算法
+
+ms.h		用到头文件
+main.c		主函数
+mergesort.c	自定义函数
+makefile	make工具编译文件

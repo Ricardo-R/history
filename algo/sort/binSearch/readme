@@ -1,0 +1,6 @@
+实现二分查找算法
+
+bs.h		用到头文件
+main.c		主函数
+binsearch.c	自定义函数
+makefile	make工具编译文件

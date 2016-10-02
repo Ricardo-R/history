@@ -1,0 +1,8 @@
+递归方式实现二叉树的创建、遍历
+
+bt.h           用到头文件和声明
+main.c         主函数
+createTree.c   自定义函数
+makefile       make工具编译文件
+test.c         测试创建单链表的程序代码
+some_res       存放一些关于数列的公式

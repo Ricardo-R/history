@@ -1,0 +1,172 @@
+# xls
+I wrote this program for two purposes, as my first python project and
+I need this program to handle some xls files.This program automatically 
+recognizes the title of column defined by the dict which is control by one
+who uses this program, and may get those infomations out into a xls file.
+More details:
+
+##python实践编程
+>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;这里要说的就是我开始我的第一个使用python来处理xls文件的小项目，在这个过程中我学到了哪些以及后面怎么继续学习python。在这篇文章之前，需要看过前面的《简明python教程》。
+
+##xls文件项目
+>###目标功能
+>>$1  自动根据xls文件的标题行识别表单是否符合条件
+
+>>$2  分离符合条件的表单为单独文件
+
+>>$3  处理符合条件的xls文件，自动识别标题行
+
+>>$4  获取对应标题列数据，写入指定表单
+
+>###实现过程&解决问题
+>>####模块安装
+
+>>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;首先，下载xlwt,xlrd和xlutils三个模块安装，所以这里就有一个安装模块的问题。通过在网上搜索之后然后在python官网找到下载的链接，将文件下载下来，然后就是安装。下载下来的包解压之后就会有一个setup.py，然后使用
+>>> \#python setup.py install
+
+>>安装即可。其实这里安装的过程：
+
+>>>setup函数里做的大部分是设置描述性东西，比如name、version等，最主要的是packages参数，最后做的就是将文件复制到python的模块搜索路径下
+
+>>这里涉及到python的模块搜索路径的问题。使用import指令导入模块，python解释器就会在当前目录下寻找\[模块名\].py的文件，然后再从环境变量PYTHONPATH寻找，如果这个环境变量没有设定，解释器还会在安装预先设定的的一些目录寻找，标准模块就是放在这些预设的目录。搜索的目录是可以在运行时动态改变的，比如将module.py不放在当前目录，而放在一个冷僻的角落里。就需要通过某种途径，如sys.path，来告知Python。sys.path返回的是模块搜索列表，然后通过使用list的append()或insert()将我们自己的路径添加进去。
+
+<br/>
+>>####$1
+>>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;第一个功能是“自动根据xls文件的标题行识别表单是否符合条件”，思路是这样的：
+>>>载入自定义的标题存储为一个list,sheet表单的前面maxline行，将每一行的所有列标题分别串联成一个长的字符串strs，将标题字典中的标题使用find函数在strs中搜索字串，满足某些字典中的标题条件即可视为改行为这个表单的标题行，返回行号;如果在maxline中找不到符合条件的标题行返回-1
+
+>>这里又引出了一个问题：如何载入文件然后转换为list？
+我找到这样一篇参考文章   [文本处理](http://rwpy4l.readthedocs.org/en/latest/ch02/FileProcessing.html),然后根据自定义字典文件时使用的分隔符，通过字符串的split函数分隔每一个元素。
+ 
+<br/>
+>>####$2
+>>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;第二个功能是“分离符合条件的表单为单独文件”，思路是这样的：
+
+>>>前面一个功能实现了标题识别，通过这一个就可以判定一个表单是否符合条件。因为一个表格文件包含很多个表单，一个表格文件中可能有部分表单符合要求，部分不符合要求，因此当一个表格文件符合这个情况时，需要分离每一个符合条件的表单到一个个单独的文件。至于分离的表单的数据，复制过来即可。在这里的问题是文件的命名，一个比个文件中的所有表单的名字都不会相同，因此我使用hash函数对表格文件名进行hash得到的hash字符串连接上表单的名字作为分离出来的文件名，可以有效防止文件名重复的问题。
+
+>>这里又有一个问题：hash函数由哪个模块提供？
+
+>>答案是：hashlib，通过import hashlib然后直接使用hash函数即可，这是python自带的一个标准库。
+
+<br/>
+>>####$3
+
+>>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;第三个功能是"处理符合条件的xls文件，自动识别标题行"，思路是这样的：
+>>>在第二个功能中，我们已经将符合条件的xls文件筛选出来了，在这个功能中我们集中精力解决标题识别的问题。先将我们自定义的标题和这个标题的拓展以key:value的形式写在字典文件中，在这个字典文件中，每一个key:value占一行。比如,
+>>>>身份证号码:身份证号码，公民身份证号码，公民身份号码，身分证号码，公民身分证号码，公民身分号码
+
+>>>通过载入字典文件，将key:value对应建立__列标题识别字典__。对于一个列标题，比如"公民身份证号码"，将"公民身份证号码"这个列标题遍历字典的所有value，方法是：
+
+>>>>对于每一个字典中的value字符串使用find方法查找子串“公民身份证号码”，然后在value为"身份证号码，公民身份证号码，公民身份号码，身分证号码，公民身分证号码，公民身分号码"的find函数中，由于匹配到，所以会返回子串的位置，即返回大于等于0的值，通过这个返回值就可以判断是否匹配到该子串，即是识别出该列标题为"身份证号码"，然后返回value对应的key，即"身份证号码"。
+
+>>识别到这一列的列标题后，说明这一列的数据是我们需要提取的，这个时候我需要想一个办法记录好识别出来的这一列标题。这里我构建一个__源文件字典__，列标题识别函数识别出来的某一列后，将这一列的列号作为key，将列标题识别函数识别出来的key作为value。
+
+<br/>
+>>####$4
+>>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;第四个功能是"获取对应标题列数据，写入指定表单"，思路是这样的：
+
+>>>写入的格式是一定的，这个格式通过__写入字典__规定。写入字典的key是标题，这个标题和前面的列标题识别字典文件中key：value中的key一致。比如说，列标题识别字典有一行是“身份证号码:身份证号码，公民身份证号码，公民身份号码，身分证号码，公民身分证号码，公民身分号码”，那么写入字典这里也会有一行的key是“身份证号码”。写入字典的每个key对应的value是要写入表单的列的列号，由于表单是写入信息的表单的那一列对应那个列标题的数据是，所以这里的列号是自己分配的。必须再次提醒的是，写入字典的key必须和列标题识别字典的key完全一致对应，否则就会出现识别出来的列的数据不需要保存，这不符合我们提取信息的初衷。
+
+>>>识别完列标题就建立好了前面说的源文件字典，然后通过写入字典就可以找到写入的位置。从识别出来的标题行的下一行开始，通过源文件字典的has_key(列号)函数来查看源文件字典中是否记录有这一列，是即表明这一列的数据是我们要提取的，然后将该列号作为源文件字典的key查找到value，将这个value作为写入字典的key即可查找出对应写入的列号;如果has_key(列号)函数来查看源文件字典中没有记录这一列，表明这一列的数据不是我们要提取的，跳过，继续下一列。
+
+>>###编码问题
+
+>>>一个是python源文件的编码，一个是string类型的编码。python默认是以ASCII来处理py源文件的，如果py源文件中含有中文等注释的话，在编译的时候会报错，要解决这个问题就需要显示指定源文件的编码，如显式指定为utf8的编码，需要在py源文件的第一或第二行加上这一句：
+
+>>>>\#conding=utf8
+
+>>>以上解决了py源文件的编码的问题，但是使用到字符串函数时，如果字符串中含有中文，结果并不能如我们所愿，这个就涉及到字符串的编码的问题。因为string类型默认也是ASCII，因此需要使用下面的语句来改变string的编码。
+
+>>>>import sys
+
+>>>>reload(sys)
+
+>>>>sys.setdefaultencoding(‘utf8′)
+
+<br/>
+>>###用到的xlwt,xlrd,xlutils中的函数
+
+>>>####xlwt
+
+>>>import xlwt
+
+>>>\#创建一个文件 
+>>>>workbook = xlwt.Workbook(encoding='utf-8') 
+
+>>>\#增加一个表单 
+>>>>booksheet = workbook.add_sheet('Sheet 1') 
+
+>>>如果对一个单元格重复操作，会引发
+
+>>>>returns error:
+>>>>\# Exception: Attempt to overwrite cell:
+>>>>\# sheetname=u'sheet 1' rowx=0 colx=0
+
+>>>所以在打开时加cell_overwrite_ok=True解决
+
+>>>>booksheet = workbook.add_sheet('Sheet 1',cell_overwrite_ok=True)
+
+>>>重新写入新数据，再保存时，却丢失了之前的格式（比如原来的是粗体，保存之后没了）,在用xlrd.open_workbook时，添加对应的参数formatting_info=True，就可以保留原有格式了。
+
+>>>>booksheet = workbook.add_sheet('Sheet 1',cell_overwrite_ok=True，formatting_info=True)
+
+>>>\#增加一行 
+
+>>>>row = booksheet.row(i) 
+
+>>>\#增加一列 
+
+>>>>col = booksheet.col(j) 
+
+>>>\#为某个单元格赋值 
+>>>>booksheet.write(i, j, 'Test') 
+
+>>>>row.write(j, 'Test') 
+
+>>>>col.write(i, 'Test') 
+
+
+>>>####xlrd
+
+>>>import xlrd
+
+>>>\#获取一个文件
+>>>>workbook = xlrd.open_workbook('成绩单.xls') 
+
+>>>\#获取文件中表单数量 
+>>>>workbook.nsheets 
+
+>>>\#获取一个表单 
+>>>>workbook.sheets()[i], 
+
+>>>>workbook.sheet_by_index(i) 
+
+>>>>workbook.sheet_by_name(u'Sheet1') 
+
+>>>\#获取行，列数 
+
+>>>>sheet.nrows, sheet.ncols 
+
+>>>\#获取整行，列数据 
+
+>>>>sheet.row(i), sheet.col(j) 
+
+>>>\#获取某个单元格数据 
+>>>>sheet.cell(i, j).value 
+
+>>>>sheet.row(i)[j].value 
+
+>>>>sheet.col(j)[i].value
+
+
+>>>####xlutils
+
+>>>import xlutils.copy from copy
+
+
+
+
+
+
+
+
